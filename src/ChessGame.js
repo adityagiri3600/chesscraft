@@ -27,7 +27,7 @@ const ChessGame = () => {
       .fill("")
       .map((square, index) => (index === 0 ? "pawn" : square))
   );
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   return (
     <div
@@ -71,7 +71,7 @@ const ChessGame = () => {
                     updatedBoardState[selectedIndex] = "";
                     setBoardState(updatedBoardState);
                 }
-                setSelectedIndex(i);
+                setSelectedIndex(-1);
             }
             return (
               <Square
