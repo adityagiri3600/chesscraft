@@ -12,20 +12,40 @@ const Square = ({ piece, color, handleClick, isSelected }) => {
         fontSize: "2em",
         backgroundColor: color,
         border: isSelected ? "2px solid red" : "none",
-        zIndex: isSelected ? "3" : "1"
+        zIndex: isSelected ? "3" : "1",
+        userSelect: "none"
       }}
       onClick={handleClick}
     >
-      {piece}
+      {piece.image}
     </div>
   );
 };
 
+class Piece {
+  constructor(name, image, validMoves) {
+    this.name = name;
+    this.image = image;
+    this.validMoves = validMoves;
+  }
+  isValidMove = (start, end) => {
+    const deltaX = end%8 - start%8;
+    const deltaY = Math.floor(start/8) - Math.floor(end/8);
+    for (let i = 0; i < this.validMoves.length; i++) {
+      const element = this.validMoves[i];
+      if (element[0] === deltaX && element[1] === deltaY) {
+        return true;
+      }
+    }
+  }
+}
+
 const ChessGame = () => {
+  let pawn = new Piece("pawn", "♟", [[0,-1]]);
   const [boardState, setBoardState] = useState(
     new Array(64)
       .fill("")
-      .map((square, index) => (index === 0 ? "pawn" : square))
+      .map((square, index) => (index === 0 ? pawn : square))
   );
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
@@ -65,7 +85,7 @@ const ChessGame = () => {
                     setSelectedIndex(-1);
                     return;
                 }
-                if (boardState[selectedIndex]!==""){
+                if (boardState[selectedIndex]!=="" && boardState[selectedIndex].isValidMove(selectedIndex, i)){
                     const updatedBoardState = [...boardState]
                     updatedBoardState[i] = boardState[selectedIndex];
                     updatedBoardState[selectedIndex] = "";
