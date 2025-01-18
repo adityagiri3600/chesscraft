@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { pieces as p, Piece } from "./Piece";
 
 const Square = ({ piece, color, handleClick, isSelected, validMoveSquare, validCaptureMoveSquare }) => {
   return (
@@ -9,7 +10,7 @@ const Square = ({ piece, color, handleClick, isSelected, validMoveSquare, validC
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        fontSize: "2em",
+        fontSize: "clamp(1.2rem, 5vw, 3rem)",
         backgroundColor: isSelected ? "rgb(46, 95, 20)" : color,
         // border: isSelected ? "2px solid red" : "none",
         // zIndex: isSelected ? "3" : "1",
@@ -18,7 +19,7 @@ const Square = ({ piece, color, handleClick, isSelected, validMoveSquare, validC
       onClick={handleClick}
     >
       <div>
-        {piece.image}
+        {piece ? piece.image : ""}
       </div>
       {(validMoveSquare || validCaptureMoveSquare) && <div style={{
         position: "absolute",
@@ -32,70 +33,107 @@ const Square = ({ piece, color, handleClick, isSelected, validMoveSquare, validC
   );
 };
 
-class Piece {
-  constructor(name, image, side, validMoves, validCaptureMoves) {
-    this.name = name;
-    this.image = image;
-    this.side = side;
-    this.validMoves = validMoves;
-    this.validCaptureMoves = validCaptureMoves;
+async function combine(piece_one, piece_two) {
+  const data = {
+    piece_one: piece_one.name,
+    piece_two: piece_two.name,
+  };
+  try {
+    const response = await fetch("http://localhost:5000/ask", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    console.log(result);
+    let piece = new Piece(
+      `${piece_one.name}_${piece_two.name}`,
+      `${piece_one.image}${piece_two.image}`,
+      piece_one.side,
+      result
+    )
+    return piece;
+  } catch (error) {
+    console.error("Error combining pieces:", error);
+    return null;
   }
-  isValidMove = (start, end) => {
-    const deltaX = (end % 8) - (start % 8);
-    const deltaY = Math.floor(start / 8) - Math.floor(end / 8);
-    for (let i = 0; i < this.validMoves.length; i++) {
-      const element = this.validMoves[i];
-      if (element[0] === deltaX && element[1] === deltaY) {
-        return true;
-      }
-    }
-  };
-  isValidCaptureMove = (start, end) => {
-    const deltaX = (end % 8) - (start % 8);
-    const deltaY = Math.floor(start / 8) - Math.floor(end / 8);
-    for (let i = 0; i < this.validCaptureMoves.length; i++) {
-      const element = this.validCaptureMoves[i];
-      if (element[0] === deltaX && element[1] === deltaY) {
-        return true;
-      }
-    }
-  };
 }
 
 const ChessGame = () => {
-  let pawn = new Piece(
-    "pawn",
-    "♙",
-    "white",
-    [[0, -1]],
-    [
-      [1, -1],
-      [-1, -1],
-    ]
-  );
-  const [boardState, setBoardState] = useState(
-    new Array(64).fill("").map((square, index) => {
-      if (index === 0) return pawn;
-      if (index === 9) return new Piece("pawn", "♟", "black", [[0, 1]], [
-        [1, 1],
-        [-1, 1],
-      ]);
-      return "";
-    })
-  );
+
+  const initialBoardState = [
+    p.b.rook, p.b.knight, p.b.bishop, p.b.queen, p.b.king, p.b.bishop, p.b.knight, p.b.rook,
+    p.b.pawn, p.b.pawn, p.b.pawn, p.b.pawn, p.b.pawn, p.b.pawn, p.b.pawn, p.b.pawn,
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    p.w.pawn, p.w.pawn, p.w.pawn, p.w.pawn, p.w.pawn, p.w.pawn, p.w.pawn, p.w.pawn,
+    p.w.rook, p.w.knight, p.w.bishop, p.w.queen, p.w.king, p.w.bishop, p.w.knight, p.w.rook
+  ];
+
+  const [boardState, setBoardState] = useState(initialBoardState);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [turn, setTurn] = useState("white");
+
+  const [combining, setCombining] = useState(false);
+  const [pieceOneIndex, setPieceOneIndex] = useState(null);
+  const [pieceTwoIndex, setPieceTwoIndex] = useState(null);
 
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
+        flexDirection: window.innerWidth < 1000 ? "column" : "row",
         alignItems: "center",
         minHeight: "100vh",
         backgroundColor: "#2c2b29",
       }}
     >
+      <button
+        onClick={async () => {
+          if (!combining){
+            setCombining(true);
+            return;
+          }
+          setPieceOneIndex(null);
+          setPieceTwoIndex(null);
+          setCombining(false);
+          if (pieceOneIndex === null || pieceTwoIndex === null) {
+            return;
+          }
+          try {
+            const combinedPiece = await combine(boardState[pieceOneIndex], boardState[pieceTwoIndex]);
+            if (combinedPiece) {
+              console.log(boardState);
+              setBoardState(prevBoardState => {
+                const updatedBoardState = [...prevBoardState];
+                updatedBoardState[pieceOneIndex] = "";
+                updatedBoardState[pieceTwoIndex] = combinedPiece;
+                return updatedBoardState; // Return the updated state
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching pawn_knight:", error);
+          }
+        }}
+        style={{
+          padding: "10px 20px",
+          fontSize: "1.5rem",
+          backgroundColor: "#4e7837",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+          margin: "20px",
+          outline: "none",
+        }}
+      >
+        {combining ?( pieceOneIndex&&pieceTwoIndex ? "Combine!!!!": "Cancel") : "Combine!"}
+      </button>
       <div
         style={{
           display: "grid",
@@ -114,22 +152,41 @@ const ChessGame = () => {
           .map((_, i) => {
             let piece = boardState[i];
             let handleClick = () => {
+              if (combining) {
+                if (pieceOneIndex === i) {
+                  setPieceOneIndex(null);
+                  return;
+                }
+                if (pieceTwoIndex === i) {
+                  setPieceTwoIndex(null);
+                  return;
+                }
+                if (pieceOneIndex === null) {
+                  setPieceOneIndex(i);
+                  return;
+                }
+                if (pieceTwoIndex === null) {
+                  setPieceTwoIndex(i);
+                  return;
+                }
+              }
               if (selectedIndex === i) {
                 setSelectedIndex(-1);
                 return;
               }
-              if (boardState[i] !== "" && boardState[i].side !== turn) {
-                return;
-              }
               if (selectedIndex === -1) {
+                if (boardState[i] !== "" && boardState[i].side !== turn) {
+                  return;
+                }
                 setSelectedIndex(i);
                 return;
               }
-              // non-capture move
+              // capture move
               if (
                 boardState[selectedIndex] !== "" &&
-                boardState[selectedIndex].isValidMove(selectedIndex, i) &&
-                boardState[i] === ""
+                boardState[selectedIndex].isValidCaptureMove(selectedIndex, i, boardState) &&
+                boardState[i] !== "" &&
+                boardState[i].side !== boardState[selectedIndex].side
               ) {
                 const updatedBoardState = [...boardState];
                 updatedBoardState[i] = boardState[selectedIndex];
@@ -139,12 +196,14 @@ const ChessGame = () => {
                 setTurn(turn === "white" ? "black" : "white");
                 return;
               }
-              // capture move
+              if (boardState[i] !== "" && boardState[i].side !== turn) {
+                return;
+              }
+              // non-capture move
               if (
                 boardState[selectedIndex] !== "" &&
-                boardState[selectedIndex].isValidCaptureMove(selectedIndex, i) &&
-                boardState[i] !== "" &&
-                boardState[i].side !== boardState[selectedIndex].side
+                boardState[selectedIndex].isValidMove(selectedIndex, i, boardState) &&
+                boardState[i] === ""
               ) {
                 const updatedBoardState = [...boardState];
                 updatedBoardState[i] = boardState[selectedIndex];
@@ -158,18 +217,19 @@ const ChessGame = () => {
             };
             // white and black squares
             let color = Math.floor(i + i / 8) % 2 ? "#4e7837" : "#69923e";
+            if (i === pieceOneIndex || i === pieceTwoIndex) color = "rgba(255, 81, 0, 0.8)";
             // square color for valid moves
             let validMoveSquare =  (
               selectedIndex !== -1 &&
               boardState[selectedIndex] !== "" &&
-              boardState[selectedIndex].isValidMove(selectedIndex, i) &&
+              boardState[selectedIndex].isValidMove(selectedIndex, i, boardState) &&
               boardState[i] === ""
             );
             // square color for valid capture moves
             let validCaptureMoveSquare = (
               selectedIndex !== -1 &&
               boardState[selectedIndex] !== "" &&
-              boardState[selectedIndex].isValidCaptureMove(selectedIndex, i) &&
+              boardState[selectedIndex].isValidCaptureMove(selectedIndex, i, boardState) &&
               boardState[i] !== "" &&
               boardState[i].side !== boardState[selectedIndex].side
             );
