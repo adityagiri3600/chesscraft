@@ -1,8 +1,9 @@
 export class Piece {
-  constructor(name, image, side, moves) {
+  constructor(name, image, side, description, moves) {
     this.name = name;
     this.image = image;
     this.side = side;
+    this.description = description;
     this.moves = moves;
   }
   isValidMove = (start, end, boardState) => {
@@ -56,7 +57,7 @@ export class Piece {
 // export pieces
 export const pieces = {
   w: {
-    pawn: new Piece("pawn", "♙", "white", {
+    pawn: new Piece("pawn", "♙", "white", "classic pawn!", {
         jump: [[0, 1]],
         direction: [],
         capture: {
@@ -64,32 +65,32 @@ export const pieces = {
         }
       }
     ),
-    rook: new Piece("rook", "♖", "white", {
+    rook: new Piece("rook", "♖", "white", "moves horizontally and vertically", {
         jump: [],
         direction: [[1, 0], [-1, 0], [0, 1], [0, -1]]
       }
     ),
-    knight: new Piece("knight", "♘", "white", {
+    knight: new Piece("knight", "♘", "white", "fierce horse that moves in an L shape", {
         jump: [[1, 2], [-1, 2], [1, -2], [-1, -2], [2, 1], [-2, 1], [2, -1], [-2, -1]]
       }
     ),
-    bishop: new Piece("bishop", "♗", "white", {
+    bishop: new Piece("bishop", "♗", "white", "diagonal mover with a sharp eye", {
         jump: [],
         direction: [[1, 1], [-1, 1], [1, -1], [-1, -1]]
       }
     ),
-    queen: new Piece("queen", "♕", "white", {
+    queen: new Piece("queen", "♕", "white", "the most powerful piece, moves in all directions", {
         jump: [],
         direction: [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]
       }
     ),
-    king: new Piece("king", "♔", "white", {
+    king: new Piece("king", "♔", "white", "the royal piece, moves one square in any direction", {
         jump: [[0, 1], [1, 1], [-1, 1], [1, 0], [-1, 0], [0, -1], [1, -1], [-1, -1]]
       }
     ),
   },
   b: {
-    pawn: new Piece("pawn", "♟", "black", {
+    pawn: new Piece("pawn", "♟", "black", "classic pawn!", {
         jump: [[0, -1]],
         direction: [],
         capture: {
@@ -97,26 +98,26 @@ export const pieces = {
         }
       }
     ),
-    rook: new Piece("rook", "♜", "black", {
+    rook: new Piece("rook", "♜", "black", "moves horizontally and vertically", {
         jump: [],
         direction: [[1, 0], [-1, 0], [0, 1], [0, -1]]
       }
     ),
-    knight: new Piece("knight", "♞", "black", {
+    knight: new Piece("knight", "♞", "black", "fierce horse that moves in an L shape", {
         jump: [[1, 2], [-1, 2], [1, -2], [-1, -2], [2, 1], [-2, 1], [2, -1], [-2, -1]]
       }
     ),
-    bishop: new Piece("bishop", "♝", "black", {
+    bishop: new Piece("bishop", "♝", "black", "diagonal mover with a sharp eye", {
         jump: [],
         direction: [[1, 1], [-1, 1], [1, -1], [-1, -1]]
       }
     ),
-    queen: new Piece("queen", "♛", "black", {
+    queen: new Piece("queen", "♛", "black", "the most powerful piece, moves in all directions", {
         jump: [],
         direction: [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]
       }
     ),
-    king: new Piece("king", "♚", "black", {
+    king: new Piece("king", "♚", "black", "the royal piece, moves one square in any direction", {
         jump: [[0, 1], [1, 1], [-1, 1], [1, 0], [-1, 0], [0, -1], [1, -1], [-1, -1]]
       }
     )

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { pieces as p, Piece } from "./Piece";
 
 const Square = ({ piece, color, handleClick, isSelected, validMoveSquare, validCaptureMoveSquare }) => {
@@ -35,8 +35,8 @@ const Square = ({ piece, color, handleClick, isSelected, validMoveSquare, validC
 
 async function combine(piece_one, piece_two) {
   const data = {
-    piece_one: piece_one.name,
-    piece_two: piece_two.name,
+    piece_one: `${piece_one.side}_${piece_one.name}`,
+    piece_two: `${piece_two.side}_${piece_two.name}`
   };
   try {
     const response = await fetch("http://localhost:5000/ask", {
@@ -49,9 +49,10 @@ async function combine(piece_one, piece_two) {
     const result = await response.json();
     console.log(result);
     let piece = new Piece(
-      `${piece_one.name}_${piece_two.name}`,
-      `${piece_one.image}${piece_two.image}`,
+      result.name,
+      result.emoji,
       piece_one.side,
+      result.description,
       result
     )
     return piece;
@@ -81,6 +82,7 @@ const ChessGame = () => {
   const [combining, setCombining] = useState(false);
   const [pieceOneIndex, setPieceOneIndex] = useState(null);
   const [pieceTwoIndex, setPieceTwoIndex] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   return (
     <div
@@ -93,47 +95,88 @@ const ChessGame = () => {
         backgroundColor: "#2c2b29",
       }}
     >
-      <button
-        onClick={async () => {
-          if (!combining){
-            setCombining(true);
-            return;
-          }
-          setPieceOneIndex(null);
-          setPieceTwoIndex(null);
-          setCombining(false);
-          if (pieceOneIndex === null || pieceTwoIndex === null) {
-            return;
-          }
-          try {
-            const combinedPiece = await combine(boardState[pieceOneIndex], boardState[pieceTwoIndex]);
-            if (combinedPiece) {
-              console.log(boardState);
-              setBoardState(prevBoardState => {
-                const updatedBoardState = [...prevBoardState];
-                updatedBoardState[pieceOneIndex] = "";
-                updatedBoardState[pieceTwoIndex] = combinedPiece;
-                return updatedBoardState; // Return the updated state
-              });
+      <div>
+        <button
+          onClick={async () => {
+            if (!combining){
+              setCombining(true);
+              setSelectedIndex(-1);
+              return;
             }
-          } catch (error) {
-            console.error("Error fetching pawn_knight:", error);
-          }
-        }}
-        style={{
-          padding: "10px 20px",
-          fontSize: "1.5rem",
-          backgroundColor: "#4e7837",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-          margin: "20px",
-          outline: "none",
-        }}
-      >
-        {combining ?( pieceOneIndex&&pieceTwoIndex ? "Combine!!!!": "Cancel") : "Combine!"}
-      </button>
+            setPieceOneIndex(null);
+            setPieceTwoIndex(null);
+            setCombining(false);
+            if (pieceOneIndex === null || pieceTwoIndex === null) {
+              return;
+            }
+            try {
+              setLoading(true);
+              const combinedPiece = await combine(boardState[pieceOneIndex], boardState[pieceTwoIndex]);
+              if (combinedPiece) {
+                console.log(boardState);
+                setBoardState(prevBoardState => {
+                  const updatedBoardState = [...prevBoardState];
+                  updatedBoardState[pieceOneIndex] = "";
+                  updatedBoardState[pieceTwoIndex] = combinedPiece;
+                  return updatedBoardState; 
+                });
+                setLoading(false);
+                setTurn(turn === "white" ? "black" : "white");
+              }
+            } catch (error) {
+              console.error("Error fetching pawn_knight:", error);
+            }
+          }}
+          style={{
+            padding: "10px 20px",
+            fontSize: "1.5rem",
+            backgroundColor: "#4e7837",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            margin: "20px",
+            outline: "none",
+            display: "flex",
+            justifyContent: "center",
+            width: "200px",
+          }}
+        >
+          {!loading && (combining ?( pieceOneIndex&&pieceTwoIndex ? "Combine!!!!": "Cancel") : "Combine!")}
+          {loading&&"Crafting..."}
+          {loading&&<div
+            style={{
+              marginLeft: "10px",
+              width: "20px",
+              height: "20px",
+              border: "2px solid white",
+              borderRadius: "50%",
+              borderLeftColor: "transparent",
+              borderTopColor: "transparent",
+              animation: "spin 1s linear infinite",
+              opacity: loading ? "1" : "0",
+              transition: "all 1s"
+            }}
+            
+          ></div>}
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        </button>
+        {selectedIndex !== -1 &&
+          <div style={{
+            color: "white",
+            padding: "10px 0",
+            backgroundColor: "rgba(9, 5, 1, 0.8)",
+            borderRadius: "5px",
+            margin: "20px",
+            width: "200px",
+            textAlign: "center",
+          }}>
+            <p>{boardState[selectedIndex].image} {boardState[selectedIndex].name}</p>
+            <p>{boardState[selectedIndex].description}</p>
+          </div>
+        }
+        {combining && <p style={{color: "white", margin: "20px"}}>Select two pieces to combine</p>}
+      </div>
       <div
         style={{
           display: "grid",
@@ -146,7 +189,7 @@ const ChessGame = () => {
           borderRadius: "20px",
           overflow: "hidden",
         }}
-      >
+            >
         {Array(64)
           .fill()
           .map((_, i) => {
@@ -161,14 +204,15 @@ const ChessGame = () => {
                   setPieceTwoIndex(null);
                   return;
                 }
-                if (pieceOneIndex === null) {
+                if (pieceOneIndex === null && boardState[i] !== "" && boardState[i].side === turn) {
                   setPieceOneIndex(i);
                   return;
                 }
-                if (pieceTwoIndex === null) {
+                if (pieceTwoIndex === null && boardState[i] !== "" && boardState[i].side === turn) {
                   setPieceTwoIndex(i);
                   return;
                 }
+                return
               }
               if (selectedIndex === i) {
                 setSelectedIndex(-1);

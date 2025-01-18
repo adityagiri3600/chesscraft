@@ -14,11 +14,26 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+CACHE_FILE = "cache.json"
+
+# Load cache from the file if it exists
+if os.path.exists(CACHE_FILE):
+    with open(CACHE_FILE, "r") as f:
+        cache = json.load(f)
+else:
+    cache = {}
+
 @app.route("/ask", methods=["POST"])
 def ask():
     piece_one = request.get_json()["piece_one"]
     piece_two = request.get_json()["piece_two"]
-    system = "you're an ai that lists the valid moves a hypothetical combination of chess pieces can make in the form of (∆x,∆y) in a list. do not output anything else other than the list. also make sure the output is interesting game wise. Output in a json format first arguement is jump moves like a knight or pawn, second is directional moves which can be repeated indefinitely like a bishop or a rook, third is capture which includes the jump and direction moves for capturing, if capture moves are same as normal moves don't pass in the capture move parameter\nexamples:\nwhite pawn : {\n        jump: [[0, 1]],\n        direction: [],\n        capture: {\n          jump: [[1, 1], [-1, 1]]\n        }\n      }\nwhite rook: \n{\n        jump: [],\n        direction: [[1, 0], [-1, 0], [0, 1], [0, -1]]\n      } do not use any formatting like backticks output in plain text!!! most important !! USE PLAIN TEXT DONT OUTPUT IN CODE BLOCK"
+    
+    cache_key = f"{piece_one}:{piece_two}"
+
+    if cache_key in cache:
+        return jsonify(json.loads(cache[cache_key]))
+    
+    system = "you're an ai that lists the valid moves a hypothetical combination of chess pieces can make in the form of (∆x,∆y) in a list. do not output anything else other than the list. also make sure the output is interesting game wise. Output in a json format first arguement is jump moves like a knight or pawn, second is directional moves which can be repeated indefinitely like a bishop or a rook, third is capture which includes the jump and direction moves for capturing, if capture moves are same as normal moves don't pass in the capture move parameter\nexamples:\nwhite pawn : {\n        jump: [[0, 1]],\n        direction: [],\n        capture: {\n          jump: [[1, 1], [-1, 1]]\n        }\n      }\nwhite rook: \n{\n        jump: [],\n        direction: [[1, 0], [-1, 0], [0, 1], [0, -1]]\n      } do not use any formatting like backticks output in plain text!!! most important !! USE PLAIN TEXT DONT OUTPUT IN CODE BLOCK. Also do not make redundant pieces like bishop+queen shouldn't just give another piece that moves like a queen, in such a case you can use novel moves, assymetry or differing capture moves from regular moves to make a unique piece. lastly provide three more fields, 'emoji', 'name' and 'description', emoji should be suitable and interesting, description should be short and also interesing possibly story like and should describe moves in brief"
     system += "\nyour task: combine " + piece_one + "+" + piece_two
     response = model.generate_content(system).text
     if response[0] == '`':
@@ -26,6 +41,9 @@ def ask():
         response = response.split("\n")[1:-1]
         response = "\n".join(response)
     print(response)
+    cache[cache_key] = response
+    with open(CACHE_FILE, "w") as f:
+        json.dump(cache, f)
     return jsonify(json.loads(response))
     
     
