@@ -352,7 +352,7 @@ const ChessGame = () => {
                     margin: "2px",
                     color: "black",
                     lineHeight: "1.5",
-                  }}> {move[0]}, {move[1]}</span>
+                  }}> {move[0]} {move[1]}</span>
                 ))}
               </p>}
               {boardState[selectedIndex].moves.direction && boardState[selectedIndex].moves.direction.length > 0 && <p>
@@ -364,7 +364,7 @@ const ChessGame = () => {
                     margin: "2px",
                     color: "black",
                     lineHeight: "1.5",
-                  }}> {move[0]}, {move[1]}</span>
+                  }}> {move[0]} {move[1]}</span>
                 ))}
               </p>}
             </div>
@@ -386,7 +386,7 @@ const ChessGame = () => {
                     margin: "2px",
                     color: "black",
                     lineHeight: "1.5",
-                  }}> {move[0]}, {move[1]}</span>
+                  }}> {move[0]} {move[1]}</span>
                 ))}
               </p>}
               {boardState[selectedIndex].moves.capture.direction && boardState[selectedIndex].moves.capture.direction.length > 0 && <p>
@@ -398,7 +398,7 @@ const ChessGame = () => {
                     margin: "2px",
                     color: "black",
                     lineHeight: "1.5",
-                  }}> {move[0]}, {move[1]}</span>
+                  }}> {move[0]} {move[1]}</span>
                 ))}
               </p>}
             </div>}
