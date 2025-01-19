@@ -67,6 +67,24 @@ async function combine(piece_one, piece_two, strength) {
   }
 }
 
+async function promote(index, piece, setBoardState){
+  const promotion_piece = new Piece(
+    "promotion",
+    "♕",
+    piece.side,
+    "Promotion piece!",
+    {}
+  )
+  const promoted_piece = await combine(piece, promotion_piece, 9);
+  if (promoted_piece) {
+    setBoardState(prevBoardState => {
+      const updatedBoardState = [...prevBoardState];
+      updatedBoardState[index] = promoted_piece;
+      return updatedBoardState; 
+    });
+  }
+}
+
 const ChessGame = () => {
 
   const initialBoardState = [
@@ -172,9 +190,18 @@ const ChessGame = () => {
                 boardState[i] === ""
               ) {
                 const updatedBoardState = [...boardState];
+                const piece = boardState[selectedIndex];
                 updatedBoardState[i] = boardState[selectedIndex];
                 updatedBoardState[selectedIndex] = "";
                 setBoardState(updatedBoardState);
+                // promotion
+                if ((piece.side === "white" && i < 8)||(piece.side === "black" && i > 55)) {
+                  promote(i, piece, setBoardState);
+                  piece.promoted = true;
+                  setSelectedIndex(-1);
+                  setTurn(turn === "white" ? "black" : "white");
+                  return;
+                }
                 setSelectedIndex(-1);
                 setTurn(turn === "white" ? "black" : "white");
                 return;
