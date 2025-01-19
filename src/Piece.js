@@ -33,7 +33,7 @@ export class Piece {
     const deltaX = (end % 8) - (start % 8);
     const deltaY = Math.floor(start / 8) - Math.floor(end / 8);
     let captureMoves = this.moves.capture ? this.moves.capture : this.moves;
-    let jumpMoves = captureMoves.jump;
+    let jumpMoves = captureMoves.jump || [];
     for (let i = 0; i < jumpMoves.length; i++) {
       const element = jumpMoves[i];
       if (element[0] === deltaX && element[1] === deltaY) {
